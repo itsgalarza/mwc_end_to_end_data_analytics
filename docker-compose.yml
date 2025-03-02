@@ -1,0 +1,44 @@
+services:
+  prefect-server:
+    image: prefecthq/prefect:3.2.10.dev1-python3.12-conda
+    command: prefect server start
+    platform: linux/arm64 # For MacOS
+    environment:
+      - PREFECT_API_URL=http://localhost:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+    ports:
+      - "4200:4200"
+    networks:
+      - prefect-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  jupyter:
+    image: jupyter/pyspark-notebook
+    command: jupyter notebook --NotebookApp.token='mwc_lab' --allow-root --NotebookApp.allow_origin='https://colab.research.google.com' --NotebookApp.port_retries=0
+    ports:
+      - "8888:8888"
+    networks:
+      - prefect-network
+    volumes:
+      - ./notebooks:/home/jovyan/work/notebooks
+  
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - 8083:3306/tcp
+    dns: 8.8.8.8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    networks:
+      - prefect-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+
+networks:
+  prefect-network:
+    driver: bridge
